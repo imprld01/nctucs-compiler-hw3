@@ -1,16 +1,9 @@
 #include "AST/decl.hpp"
 
-// TODO
-DeclNode::DeclNode(const uint32_t line, const uint32_t col)
-    : AstNode{line, col} {}
+DeclNode::DeclNode(const uint32_t line, const uint32_t col, 
+                   const char* varName, const char* varType)
+    : AstNode{line, col}, varName(varName), varType(varType) {}
 
-// TODO
-//DeclNode::DeclNode(const uint32_t line, const uint32_t col)
-//    : AstNode{line, col} {}
-
-// TODO: You may use code snippets in AstDumper.cpp
-void DeclNode::print() {}
-
-// void DeclNode::visitChildNodes(AstNodeVisitor &p_visitor) {
-//     // TODO
-// }
+void DeclNode::visitedBy(AstNodeVisitor& visitor) const {
+    visitor.visit(*this);
+}

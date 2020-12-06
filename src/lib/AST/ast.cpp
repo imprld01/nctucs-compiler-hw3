@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <AST/AstDumper.hpp>
 #include <AST/ast.hpp>
 
@@ -7,12 +9,14 @@ AstNode::AstNode(const uint32_t line, const uint32_t col)
 // prevent the linker from complaining
 AstNode::~AstNode() {}
 
-const Location& AstNode::getLocation() const { return location; }
+Location AstNode::getLocation() const { return location; }
 
 void AstNode::visitChildNodes(AstNodeVisitor& dumper) const {
-    for (auto& node : children) dumper.visit(*node);
+    for (AstNode* node : children) {
+        dumper.visit(*node);
+    }
 }
 
-void AstNode::visitedBy(AstNodeVisitor& dumper) const {
-    dumper.visit(*this);
+void AstNode::append(AstNode* node) {
+    children.push_back(node);
 }

@@ -2,6 +2,7 @@
 #define __VISITOR_H
 
 // Forward declaration of AST nodes
+class AstNode;
 class ProgramNode;
 class DeclNode;
 class VariableNode;

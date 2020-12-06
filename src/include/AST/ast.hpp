@@ -4,7 +4,8 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <visitor/AstNodeVisitor.hpp>
+
+#include "visitor/AstNodeVisitor.hpp"
 
 struct Location {
     Location(const uint32_t line, const uint32_t col) : line(line), col(col) {}
@@ -15,18 +16,19 @@ struct Location {
 
 class AstNode {
    private:
-    std::vector<AstNode *> children;
+    std::vector<AstNode*> children;
 
    public:
     AstNode(const uint32_t line, const uint32_t col);
     virtual ~AstNode() = 0;
 
-    const Location &getLocation() const;
+    Location getLocation() const;
     void visitChildNodes(AstNodeVisitor &dumper) const;
-    virtual void visitedBy(AstNodeVisitor &dumper) const;
+    void append(AstNode* child);
+    virtual void visitedBy(AstNodeVisitor &dumper) const = 0;
 
    protected:
-    const Location location;
+    Location location;
 };
 
 #endif

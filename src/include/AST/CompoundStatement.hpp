@@ -8,8 +8,7 @@ class CompoundStatementNode : public AstNode {
     CompoundStatementNode(const uint32_t line, const uint32_t col
                           /* TODO: declarations, statements */);
     ~CompoundStatementNode() = default;
-
-    void print() override;
+    void visitedBy(AstNodeVisitor& visitor) const override;
 
   private:
     // TODO: declarations, statements

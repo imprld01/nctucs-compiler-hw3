@@ -1,22 +1,20 @@
 #ifndef __AST_PROGRAM_NODE_H
 #define __AST_PROGRAM_NODE_H
 
+#include <string>
+
 #include "AST/ast.hpp"
+using std::string;
 
 class ProgramNode : public AstNode {
-  public:
-    ProgramNode(const uint32_t line, const uint32_t col,
-                const char *p_name
-                /* TODO: return type, declarations, functions,
-                 *       compound statement */);
+   public:
+    ProgramNode(const uint32_t line, const uint32_t col, const char* p_name);
     ~ProgramNode() = default;
+    const std::string& getNameCString() const;
+    void visitedBy(AstNodeVisitor& visitor) const override;
 
-    // visitor pattern version: const char *getNameCString() const;
-    const char *getNameCString() const; 
-
-  private:
+   private:
     const std::string name;
-    // TODO: return type, declarations, functions, compound statement
 };
 
 #endif

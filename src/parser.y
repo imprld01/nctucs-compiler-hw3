@@ -25,8 +25,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-
+#include <string>
+#include <vector>
 #define YYLTYPE yyltype
+
+using std::vector;
+using std::string;
 
 typedef struct YYLTYPE {
     uint32_t first_line;
@@ -43,28 +47,50 @@ extern char *yytext;
 /* End */
 
 static AstNode *root;
-static AstNodeDumper dumper;
+static AstDumper dumper;
 
 extern "C" int yylex(void);
 static void yyerror(const char *msg);
 extern int yylex_destroy(void);
 %}
 
-%code requires {
-    class AstNode;
-}
+%code requires { #include "AST/ast.hpp" }
+%code requires { #include "AST/program.hpp" }
+%code requires { #include "AST/decl.hpp" }
+%code requires { #include "AST/variable.hpp" }
+%code requires { #include "AST/ConstantValue.hpp" }
+%code requires { #include "AST/function.hpp" }
+%code requires { #include "AST/CompoundStatement.hpp" }
+%code requires { #include "AST/print.hpp" }
+%code requires { #include "AST/expression.hpp" }
+%code requires { #include "AST/BinaryOperator.hpp" }
+%code requires { #include "AST/UnaryOperator.hpp" }
+%code requires { #include "AST/FunctionInvocation.hpp" }
+%code requires { #include "AST/VariableReference.hpp" }
+%code requires { #include "AST/assignment.hpp" }
+%code requires { #include "AST/read.hpp" }
+%code requires { #include "AST/if.hpp" }
+%code requires { #include "AST/while.hpp" }
+%code requires { #include "AST/for.hpp" }
+%code requires { #include "AST/return.hpp" }
+%code requires { #include "AST/AstDumper.hpp" }
 
     /* For yylval */
 %union {
     /* basic semantic value */
-    char *identifier;
-    int int_val;
-    double float_val;
-    char* text;
-    AstNode *node;
+    int                     int_type;
+    double                  float_type;
+    char*                   string_type;
+    AstNode*                node;
+    std::vector<AstNode*>*  node_list;
+    std::vector<char*>*     string_list;
 };
 
-%type <identifier> ProgramName ID
+%type <string_type>   ProgramName ID Type ScalarType ArrType
+%type <node_list>     DeclarationList Declarations Declaration FunctionList StatementList
+%type <string_list>   IdList
+%type <node>          CompoundStatement
+
 
     /* Delimiter */
 %token COMMA SEMICOLON COLON
@@ -108,33 +134,45 @@ Program:
     DeclarationList FunctionList CompoundStatement
     /* End of ProgramBody */
     END {
-        root = new ProgramNode(@1.first_line, @1.first_column,
-                               $1);
-
-        free($1);
+        root = new ProgramNode(@1.first_line, @1.first_column, $1);
+        for (AstNode* node: *$3) root->append(node);
+        for (AstNode* node: *$4) root->append(node);
+        root->append($5);
+        free($3);
+        free($4);
     }
 ;
 
 ProgramName:
-    ID
+    ID { 
+        $$ = strdup($1); 
+        free($1);
+    }
 ;
 
 DeclarationList:
-    Epsilon
+    Epsilon { $$ = new vector<AstNode*>(); }
     |
     Declarations
 ;
 
 Declarations:
-    Declaration
+    Declaration 
     |
-    Declarations Declaration
+    Declarations Declaration {
+        $1->insert($1->end(), $2->begin(), $2->end());
+        $$ = $1;
+    }
 ;
 
 FunctionList:
-    Epsilon
+    Epsilon {
+        $$ = new vector<AstNode*>();
+    }
     |
-    Functions
+    Functions {
+        $$ = new vector<AstNode*>();
+    }
 ;
 
 Functions:
@@ -180,9 +218,17 @@ FormalArg:
 ;
 
 IdList:
-    ID
+    ID {
+        $$ = new vector<char*>();
+        $$->push_back(strdup($1));
+        free($1);
+    }
     |
-    IdList COMMA ID
+    IdList COMMA ID {
+        $1->push_back(strdup($3));
+        $$ = $1;
+        free($1);
+    }
 ;
 
 ReturnType:
@@ -196,9 +242,20 @@ ReturnType:
                                    */
 
 Declaration:
-    VAR IdList COLON Type SEMICOLON
+    VAR IdList COLON Type SEMICOLON {
+        char* varType = $4;
+        $$ = new vector<AstNode*>();
+        for (char* varName: *$2) {
+            DeclNode* node = new DeclNode(@1.first_line, @1.first_column, varName, varType);
+            $$->push_back(node);
+            free(varName);
+        }
+        free($4);
+    }
     |
-    VAR IdList COLON LiteralConstant SEMICOLON
+    VAR IdList COLON LiteralConstant SEMICOLON {
+        $$ = new vector<AstNode*>();
+    }
 ;
 
 Type:
@@ -208,17 +265,21 @@ Type:
 ;
 
 ScalarType:
-    INTEGER
+    INTEGER { $$ = strdup("integer"); }
     |
-    REAL
+    REAL    { $$ = strdup("real");    }
     |
-    STRING
+    STRING  { $$ = strdup("string");  }
     |
-    BOOLEAN
+    BOOLEAN { $$ = strdup("boolean"); }
 ;
 
 ArrType:
-    ArrDecl ScalarType
+    ArrDecl ScalarType {
+        $$ = (char*) malloc(strlen($2) + 2 + 1);
+        strcpy($$, $2);
+        strcat($$, "[]");
+    }
 ;
 
 ArrDecl:
@@ -279,7 +340,11 @@ CompoundStatement:
     BEGIN_
     DeclarationList
     StatementList
-    END
+    END {
+        $$ = (AstNode*) new CompoundStatementNode(@1.first_line, @1.first_column);
+        // for (AstNode* node: *$2) $$->append(node);
+        // for (AstNode* node: *$3) $$->append(node);
+    }
 ;
 
 Simple:
@@ -439,11 +504,11 @@ int main(int argc, const char *argv[]) {
 
     yyin = fopen(argv[1], "r");
     assert(yyin != NULL && "fopen() fails.");
-
+    
     yyparse();
 
     if (argc >= 3 && strcmp(argv[2], "--dump-ast") == 0) {
-        dumper.visit(root);
+        dumper.visit(*root);
     }
 
     printf("\n"
@@ -451,7 +516,7 @@ int main(int argc, const char *argv[]) {
            "|  There is no syntactic error!  |\n"
            "|--------------------------------|\n");
 
-    delete root;
+    // delete root;
     fclose(yyin);
     yylex_destroy();
     return 0;

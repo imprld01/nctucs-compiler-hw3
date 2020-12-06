@@ -1,15 +1,16 @@
 #ifndef __AST_DUMPER_H
 #define __AST_DUMPER_H
 
-#include "visitor/AstNodeVisitor.hpp"
-
 #include <cstdint>
 
+#include "visitor/AstNodeVisitor.hpp"
+
 class AstDumper : public AstNodeVisitor {
-  public:
+   public:
     AstDumper() = default;
     ~AstDumper() = default;
 
+    void visit(const AstNode& node);
     void visit(const ProgramNode &p_program) override;
     void visit(const DeclNode &p_decl) override;
     void visit(const VariableNode &p_variable) override;
@@ -28,11 +29,11 @@ class AstDumper : public AstNodeVisitor {
     void visit(const ForNode &p_for) override;
     void visit(const ReturnNode &p_return) override;
 
-  private:
+   private:
     void incrementIndentation();
     void decrementIndentation();
 
-  private:
+   private:
     const uint32_t m_indentation_stride = 2u;
     uint32_t m_indentation = 0u;
 };

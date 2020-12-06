@@ -4,4 +4,4 @@
 // prevent the linker from complaining
 AstNodeVisitor::~AstNodeVisitor() {}
 
-void AstNodeVisitor::visit(AstNode& node) { node.visitedBy(*this); }
+void AstNodeVisitor::visit(const AstNode& node) { node.visitedBy(*this); }

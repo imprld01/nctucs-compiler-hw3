@@ -35,12 +35,14 @@ static void outputIndentationSpace(const uint32_t indentation) {
     std::printf("%*s", indentation, "");
 }
 
+void AstDumper::visit(const AstNode& node) { node.visitedBy(*this); }
+
 void AstDumper::visit(const ProgramNode &p_program) {
     outputIndentationSpace(m_indentation);
 
     std::printf("program <line: %u, col: %u> %s %s\n",
                 p_program.getLocation().line, p_program.getLocation().col,
-                p_program.getNameCString(), "void");
+                p_program.getNameCString().c_str(), "void");
 
     incrementIndentation();
     p_program.visitChildNodes(*this);
@@ -50,8 +52,8 @@ void AstDumper::visit(const ProgramNode &p_program) {
 void AstDumper::visit(const DeclNode &p_decl) {
     outputIndentationSpace(m_indentation);
 
-    std::printf("declaration <line: %u, col: %u>\n", p_decl.getLocation().line,
-                p_decl.getLocation().col);
+    std::printf("declaration <line: %u, col: %u> %s %s\n", p_decl.getLocation().line,
+                p_decl.getLocation().col, p_decl.varName.c_str(), p_decl.varType.c_str());
 
     incrementIndentation();
     p_decl.visitChildNodes(*this);
