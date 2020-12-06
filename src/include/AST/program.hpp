@@ -11,9 +11,8 @@ class ProgramNode : public AstNode {
                  *       compound statement */);
     ~ProgramNode() = default;
 
-    // visitor pattern version: const char *getNameCString() const; 
-
-    void print() override;
+    // visitor pattern version: const char *getNameCString() const;
+    const char *getNameCString() const; 
 
   private:
     const std::string name;

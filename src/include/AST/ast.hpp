@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+#include <visitor/AstNodeVisitor.hpp>
 
 struct Location {
     Location(const uint32_t line, const uint32_t col) : line(line), col(col) {}
@@ -12,14 +14,18 @@ struct Location {
 };
 
 class AstNode {
-  public:
+   private:
+    std::vector<AstNode *> children;
+
+   public:
     AstNode(const uint32_t line, const uint32_t col);
     virtual ~AstNode() = 0;
 
     const Location &getLocation() const;
-    virtual void print() = 0;
+    void visitChildNodes(AstNodeVisitor &dumper) const;
+    virtual void visitedBy(AstNodeVisitor &dumper) const;
 
-  protected:
+   protected:
     const Location location;
 };
 

@@ -98,22 +98,26 @@ float {integer}\.(0|[0-9]*[1-9])
     /* Integer (decimal/octal) */
 {integer} {
     TOKEN_STRING(integer, yytext);
+    yylval.int_val = atoi(yytext);
     return INT_LITERAL;
 }
 0[0-7]+   {
     TOKEN_STRING(oct_integer, yytext);
+    yylval.int_val = strtol(yytext);
     return INT_LITERAL;
 }
 
     /* Floating-Point */
 {float} {
     TOKEN_STRING(float, yytext);
+    yylval.float_val = atof(yytext);
     return REAL_LITERAL;
 }
 
     /* Scientific Notation [Ee][+-]?[0-9]+ */
 ({integer}|{float})[Ee][+-]?({integer}) {
     TOKEN_STRING(scientific, yytext);
+    yylval.float_val - atof(yytext);
     return REAL_LITERAL;
 }
 
@@ -136,6 +140,7 @@ float {integer}\.(0|[0-9]*[1-9])
     }
     *str_ptr = '\0';
     TOKEN_STRING(string, string_literal);
+    yylval.text = strdup(yytext);
     return STRING_LITERAL;
 }
     /* Whitespace */

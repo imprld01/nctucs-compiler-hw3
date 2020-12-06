@@ -18,6 +18,7 @@
 #include "AST/while.hpp"
 #include "AST/for.hpp"
 #include "AST/return.hpp"
+#include "AST/AstDumper.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -42,6 +43,7 @@ extern char *yytext;
 /* End */
 
 static AstNode *root;
+static AstNodeDumper dumper;
 
 extern "C" int yylex(void);
 static void yyerror(const char *msg);
@@ -56,7 +58,9 @@ extern int yylex_destroy(void);
 %union {
     /* basic semantic value */
     char *identifier;
-
+    int int_val;
+    double float_val;
+    char* text;
     AstNode *node;
 };
 
@@ -439,7 +443,7 @@ int main(int argc, const char *argv[]) {
     yyparse();
 
     if (argc >= 3 && strcmp(argv[2], "--dump-ast") == 0) {
-        root->print();
+        dumper.visit(root);
     }
 
     printf("\n"
