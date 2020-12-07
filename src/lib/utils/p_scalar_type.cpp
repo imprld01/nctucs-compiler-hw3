@@ -1,6 +1,6 @@
 #include "utils/p_scalar_type.hpp"
 
-const char* ptoa(p_scalar_type t) {
+const char* ptptoa(p_scalar_type t) {
     switch (t) {
     case P_BOOLEAN: return "boolean"; break;
     case P_INT:     return "integer"; break;

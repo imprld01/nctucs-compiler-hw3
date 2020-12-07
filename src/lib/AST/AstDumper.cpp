@@ -19,6 +19,8 @@
 #include "AST/return.hpp"
 #include "AST/variable.hpp"
 #include "AST/while.hpp"
+#include "utils/p_scalar_type.hpp"
+#include "utils/p_operator.hpp"
 
 // FIXME: remove this line if you choose to use visitor pattern with this template
 // #ifdef I_WANT_TO_USE_VISITOR_PATTERN
@@ -114,7 +116,7 @@ void AstDumper::visit(const FunctionNode &p_function) {
                 p_function.getLocation().line,
                 p_function.getLocation().col,
                 p_function.getFunctionName().c_str(),
-                ptoa(p_function.getReturnType()));
+                ptptoa(p_function.getReturnType()));
 
     int first = 1;
     for (const string &pt : p_function.getParamsType()) {
@@ -158,10 +160,10 @@ void AstDumper::visit(const PrintNode &p_print) {
 void AstDumper::visit(const BinaryOperatorNode &p_bin_op) {
     outputIndentationSpace(m_indentation);
 
-    // TODO: operator string
     std::printf("binary operator <line: %u, col: %u> %s\n",
-                p_bin_op.getLocation().line, p_bin_op.getLocation().col,
-                "TODO");
+                p_bin_op.getLocation().line, 
+                p_bin_op.getLocation().col,
+                poptoa(p_bin_op.getOperator()));
 
     incrementIndentation();
     p_bin_op.visitChildNodes(*this);
@@ -171,10 +173,11 @@ void AstDumper::visit(const BinaryOperatorNode &p_bin_op) {
 void AstDumper::visit(const UnaryOperatorNode &p_un_op) {
     outputIndentationSpace(m_indentation);
 
-    // TODO: operator string
     std::printf("unary operator <line: %u, col: %u> %s\n",
-                p_un_op.getLocation().line, p_un_op.getLocation().col,
-                "TODO");
+                p_un_op.getLocation().line, 
+                p_un_op.getLocation().col,
+                poptoa(p_un_op.getOperator()));
+
 
     incrementIndentation();
     p_un_op.visitChildNodes(*this);
@@ -182,6 +185,7 @@ void AstDumper::visit(const UnaryOperatorNode &p_un_op) {
 }
 
 void AstDumper::visit(const FunctionInvocationNode &p_func_invocation) {
+    return;
     outputIndentationSpace(m_indentation);
 
     // TODO: function name

@@ -2,11 +2,14 @@
 
 // TODO
 VariableReferenceNode::VariableReferenceNode(const uint32_t line,
-                                             const uint32_t col)
-    : ExpressionNode{line, col} {}
+                                             const uint32_t col,
+                                             const char* varName)
+    : ExpressionNode{line, col}, varName(varName) {}
 
-// TODO
-// VariableReferenceNode::VariableReferenceNode(const uint32_t line,
-//                                              const uint32_t col)
-//     : ExpressionNode{line, col} {}
+const std::string& VariableReferenceNode::getVarName() const {
+    return varName;
+}
 
+void VariableReferenceNode::visitedBy(AstNodeVisitor& visitor) const {
+    visitor.visit(*this);
+}

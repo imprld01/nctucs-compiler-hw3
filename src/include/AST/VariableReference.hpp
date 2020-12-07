@@ -4,17 +4,17 @@
 #include "AST/expression.hpp"
 
 class VariableReferenceNode : public ExpressionNode {
-  public:
+   public:
     // normal reference
-    VariableReferenceNode(const uint32_t line, const uint32_t col
-                          /* TODO: name */);
-    // array reference
-    // VariableReferenceNode(const uint32_t line, const uint32_t col
-    //                       /* TODO: name, expressions */);
+    VariableReferenceNode(const uint32_t line,
+                          const uint32_t col,
+                          const char* varName);
     ~VariableReferenceNode() = default;
+    const std::string& getVarName() const;
+    void visitedBy(AstNodeVisitor& visitor) const;
 
-  private:
-    // TODO: variable name, expressions
+   private:
+    std::string varName;
 };
 
 #endif

@@ -92,8 +92,9 @@ extern int yylex_destroy(void);
     int                         int_type;
     double                      float_type;
     char*                       string_type;
-    p_scalar_type                      data_type;
+    p_scalar_type               data_type;
     
+    std::vector<int>*           int_list;
     std::vector<char*>*         string_list;
     std::vector<var_info>*      id_list;
     std::vector<AstNode*>*      node_list;
@@ -102,25 +103,51 @@ extern int yylex_destroy(void);
     CompoundStatementNode*      comp_stmt_node;
     ConstantValueNode*          const_val_node;
     DeclNode*                   decl_node;
+    ExpressionNode*             expr_node;
     FunctionNode*               func_node;
     VariableNode*               var_node;
 };
 
-%type <data_type>       ScalarType ReturnType
-%type <int_type>        NegOrNot INT_LITERAL
+%type <data_type>       ScalarType          
+                        ReturnType
+%type <int_type>        NegOrNot            
+                        INT_LITERAL
 %type <float_type>      REAL_LITERAL
-%type <string_type>     Type ProgramName ID STRING_LITERAL TRUE FALSE ArrDecl ArrType FunctionName
+%type <string_type>     ID                  
+                        ProgramName         
+                        FunctionName        
+                        STRING_LITERAL      
+                        TRUE                
+                        FALSE               
+                        Type                
+                        ArrDecl             
+                        ArrType             
 
 %type <comp_stmt_node>  CompoundStatement
-%type <const_val_node>  LiteralConstant IntegerAndReal StringAndBoolean
-%type <decl_node>       Declaration FormalArg;
-%type <func_node>       Function FunctionDeclaration FunctionDefinition
-%type <node>            Statement Simple Expression VariableReference
+%type <const_val_node>  LiteralConstant     
+                        IntegerAndReal      
+                        StringAndBoolean
+%type <decl_node>       Declaration         
+                        FormalArg;
+%type <func_node>       Function            
+                        FunctionDeclaration 
+                        FunctionDefinition       
+%type <expr_node>       Expression               
+                        VariableReference        
+%type <node>            Statement                
+                        Simple                   
 
 %type <id_list>         IdList
-%type <node_list>       DeclarationList Declarations FunctionList Functions StatementList Statements FormalArgs FormalArgList  
-
-
+%type <node_list>       DeclarationList    
+                        Declarations       
+                        FunctionList       
+                        Functions          
+                        StatementList      
+                        Statements         
+                        FormalArgs         
+                        FormalArgList      
+                        ArrRefList         
+                        ArrRefs
 
     /* Delimiter */
 %token COMMA SEMICOLON COLON
@@ -327,7 +354,7 @@ Declaration:
 ;
 
 Type:
-    ScalarType { $$ = strdup(ptoa($1)); }
+    ScalarType { $$ = strdup(ptptoa($1)); }
     |
     ArrType
 ;
@@ -345,7 +372,7 @@ ScalarType:
 ArrType:
     ArrDecl ScalarType {
         char* ret = (char*) malloc(10 + 1 + strlen($1) + 1);
-        sprintf(ret, "%s %s", ptoa($2), $1);
+        sprintf(ret, "%s %s", ptptoa($2), $1);
         free($1);
         $$ = ret;
     }
@@ -473,19 +500,30 @@ Simple:
 ;
 
 VariableReference:
-    ID ArrRefList { $$ = NULL; }
+    ID ArrRefList { 
+        $$ = new VariableReferenceNode(@1.first_line, @1.first_column, $1);
+        for (AstNode* exprNode: *$2) $$->append(exprNode);
+        free($1);
+        free($2);
+    }
 ;
 
 ArrRefList:
-    Epsilon
+    Epsilon { $$ = new vector<AstNode*>(); }
     |
     ArrRefs
 ;
 
 ArrRefs:
-    L_BRACKET Expression R_BRACKET
+    L_BRACKET Expression R_BRACKET {
+        $$ = new vector<AstNode*>();
+        if ($2) $$->push_back((AstNode*) $2); // TODO
+    }
     |
-    ArrRefs L_BRACKET Expression R_BRACKET
+    ArrRefs L_BRACKET Expression R_BRACKET {
+        if ($3) $1->push_back((AstNode*) $3); // TODO
+        $$ = $1;
+    }
 ;
 
 Condition:
@@ -557,43 +595,127 @@ Statements:
 ;
 
 Expression:
-    L_PARENTHESIS Expression R_PARENTHESIS { $$ = NULL; }
+    L_PARENTHESIS Expression R_PARENTHESIS { 
+        $$ = $2; 
+    }
     |
-    MINUS Expression %prec UNARY_MINUS { $$ = NULL; }
+    MINUS Expression %prec UNARY_MINUS { 
+        $$ = new UnaryOperatorNode(@1.first_line, @1.first_column, P_NEG, $2);
+    }
     |
-    Expression MULTIPLY Expression { $$ = NULL; }
+    Expression MULTIPLY Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_MUL,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression DIVIDE Expression { $$ = NULL; }
+    Expression DIVIDE Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_DIV,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression MOD Expression { $$ = NULL; }
+    Expression MOD Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_MOD,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression PLUS Expression { $$ = NULL; }
+    Expression PLUS Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_PLUS,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression MINUS Expression { $$ = NULL; }
+    Expression MINUS Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_MINUS,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression LESS Expression { $$ = NULL; }
+    Expression LESS Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_LT,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression LESS_OR_EQUAL Expression { $$ = NULL; }
+    Expression LESS_OR_EQUAL Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_LE,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression GREATER Expression { $$ = NULL; }
+    Expression GREATER Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_GT,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression GREATER_OR_EQUAL Expression { $$ = NULL; }
+    Expression GREATER_OR_EQUAL Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_GE,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression EQUAL Expression { $$ = NULL; }
+    Expression EQUAL Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_EQ,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression NOT_EQUAL Expression { $$ = NULL; }
+    Expression NOT_EQUAL Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_NE,
+                                    $1,
+                                    $3);
+    }
     |
-    NOT Expression { $$ = NULL; }
+    NOT Expression { 
+        $$ = new UnaryOperatorNode(@1.first_line, @1.first_column, P_NOT, $2);
+    }
     |
-    Expression AND Expression { $$ = NULL; }
+    Expression AND Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_AND,
+                                    $1,
+                                    $3);
+    }
     |
-    Expression OR Expression { $$ = NULL; }
+    Expression OR Expression { 
+        $$ = new BinaryOperatorNode(@2.first_line,
+                                    @2.first_column,
+                                    P_OR,
+                                    $1,
+                                    $3);
+    }
     |
-    IntegerAndReal { $$ = NULL; }
+    IntegerAndReal { $$ = $1; }
     |
-    StringAndBoolean { $$ = NULL; }
+    StringAndBoolean { $$ = $1; }
     |
-    VariableReference { $$ = NULL; }
+    VariableReference { $$ = $1; }
     |
     FunctionInvocation { $$ = NULL; }
 ;

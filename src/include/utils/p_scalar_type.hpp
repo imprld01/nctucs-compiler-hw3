@@ -11,6 +11,6 @@ enum p_scalar_type {
     P_VOID
 };
 
-const char* ptoa(p_scalar_type t);
+const char* ptptoa(p_scalar_type t);
 
 #endif
