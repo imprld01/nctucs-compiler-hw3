@@ -168,8 +168,8 @@ Program:
         for (AstNode* node: *$3) root->append(node);
         free($3);
         
-        // for (AstNode* node: *$4) root->append(node);
-        //free($4);
+        for (AstNode* node: *$4) root->append(node);
+        free($4);
 
         root->append($5);
     }
@@ -202,9 +202,7 @@ FunctionList:
         $$ = new vector<AstNode*>();
     }
     |
-    Functions {
-        $$ = new vector<AstNode*>();
-    }
+    Functions 
 ;
 
 Functions:
@@ -227,7 +225,8 @@ Function:
 
 FunctionDeclaration:
     FunctionName L_PARENTHESIS FormalArgList R_PARENTHESIS ReturnType SEMICOLON {
-        //$$ = new FunctionNode(@1.first_line, @1.first_column, $1, *$3, $5);
+        $$ = new FunctionNode(@1.first_line, @1.first_column, $1, $5);
+        for (const AstNode* declNode: *$3) $$->addParam((const DeclNode*) declNode);
     }
 ;
 
@@ -235,36 +234,43 @@ FunctionDefinition:
     FunctionName L_PARENTHESIS FormalArgList R_PARENTHESIS ReturnType
     CompoundStatement
     END {
-        //$$ = new FunctionNode(@1.first_line, @1.first_column, $1, *$3, $5);
-        //$$->append($6);
+        $$ = new FunctionNode(@1.first_line, @1.first_column, $1, $5);
+        for (const AstNode* declNode: *$3) $$->addParam((const DeclNode*) declNode);
+        $$->append($6);
     }
 ;
 
 FunctionName:
     ID {
-        $$ = strdup($1);
-        //free($1);
+        $$ = $1;
     }
 ;
 
 FormalArgList:
-    Epsilon {
-        //$$ = new vector<int>();
-    }
+    Epsilon { $$ = new vector<AstNode*>(); }
     |
     FormalArgs
 ;
 
 FormalArgs:
-    FormalArg 
+    FormalArg {
+        $$ = new vector<AstNode*>();
+        $$->push_back($1);
+    }
     |
     FormalArgs SEMICOLON FormalArg {
-        //$1->insert($1.end(), $3.begin(), $3.end());
+        $1->push_back($3);
     }
 ;
 
 FormalArg:
-    IdList COLON Type
+    IdList COLON Type {
+        $$ = new DeclNode(@1.first_line, @1.first_column);
+        for (var_info& v: *$1) {
+            $$->append(new VariableNode(v.loc.line, v.loc.col, v.varName, $3));
+        }
+        free($1);
+    }
 ;
 
 IdList:
@@ -284,7 +290,7 @@ IdList:
 ReturnType:
     COLON ScalarType { $$ = $2; }
     |
-    Epsilon
+    Epsilon { $$ = P_VOID; }
 ;
 
     /*
@@ -302,8 +308,8 @@ Declaration:
             $$->append(varNode);
             free(v.varName);
         }
-        //free($2);
-        //free($4);
+        free($2);
+        free($4);
     }
     |
     VAR IdList COLON LiteralConstant SEMICOLON {
@@ -315,14 +321,14 @@ Declaration:
                                                      $4->getDataType());
             varNode->append($4);
             $$->append(varNode);
-            //free(v.varName);
+            free(v.varName);
         }
-        //free($2);
+        free($2);
     }
 ;
 
 Type:
-    ScalarType { $$ = ptoa($1); }
+    ScalarType { $$ = strdup(ptoa($1)); }
     |
     ArrType
 ;
@@ -340,10 +346,8 @@ ScalarType:
 ArrType:
     ArrDecl ScalarType {
         char* ret = (char*) malloc(10 + 1 + strlen($1) + 1);
-        char* tp = ptoa($2);
-        sprintf(ret, "%s %s", tp, $1);
-        //free($1);
-        //free(tp);
+        sprintf(ret, "%s %s", ptoa($2), $1);
+        free($1);
         $$ = ret;
     }
 ;
@@ -401,8 +405,8 @@ StringAndBoolean:
         char* str = strdup($1);
         str[strlen(str) - 1] = '\0';
         $$ = new ConstantValueNode(@1.first_line, @1.first_column, str + 1);
-        //free($1);
-        //free(str);
+        free($1);
+        free(str);
     }
     |
     TRUE {

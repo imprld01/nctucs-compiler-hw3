@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "visitor/AstNodeVisitor.hpp"
 #include "utils/location.hpp"
+#include "visitor/AstNodeVisitor.hpp"
 
 class AstNode {
    private:
@@ -17,9 +17,10 @@ class AstNode {
     virtual ~AstNode() = 0;
 
     Location getLocation() const;
-    void visitChildNodes(AstNodeVisitor &dumper) const;
+    void visitChildNodes(AstNodeVisitor& dumper) const;
     void append(AstNode* child);
-    virtual void visitedBy(AstNodeVisitor &dumper) const = 0;
+    const std::vector<AstNode*>& getChildren() const;
+    virtual void visitedBy(AstNodeVisitor& dumper) const = 0;
 
    protected:
     Location location;

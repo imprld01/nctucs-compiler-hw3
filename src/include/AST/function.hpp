@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "AST/ast.hpp"
+#include "AST/decl.hpp"
 #include "utils/p_scalar_type.hpp"
 
 class FunctionNode : public AstNode {
@@ -12,19 +13,20 @@ class FunctionNode : public AstNode {
     FunctionNode(const uint32_t line,
                  const uint32_t col,
                  const char* funcName,
-                 const std::vector<int>& paramsType,
                  const p_scalar_type retType);
     ~FunctionNode() = default;
+
     void visitedBy(AstNodeVisitor& visitor) const override;
-    
+    void addParam(const DeclNode* declNode);
+
     const std::string& getFunctionName() const;
-    const std::vector<int>& getParamsType() const;
-    const int getReturnType() const;
+    const std::vector<std::string>& getParamsType() const;
+    const p_scalar_type getReturnType() const;
 
    private:
     std::string funcName;
-    std::vector<int> paramsType;
-    int retType;
+    std::vector<std::string> paramsType;
+    p_scalar_type retType;
 };
 
 #endif

@@ -7,9 +7,10 @@ enum p_scalar_type {
     P_INT,
     P_REAL,
     P_STRING,
-    P_UNKNOWN
+    P_UNKNOWN,
+    P_VOID
 };
 
-char* ptoa(p_scalar_type t);
+const char* ptoa(p_scalar_type t);
 
 #endif

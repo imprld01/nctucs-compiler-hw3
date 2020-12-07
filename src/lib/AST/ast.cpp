@@ -17,6 +17,10 @@ void AstNode::visitChildNodes(AstNodeVisitor& dumper) const {
     }
 }
 
+const std::vector<AstNode*>& AstNode::getChildren() const {
+    return children;
+}
+
 void AstNode::append(AstNode* node) {
     children.push_back(node);
 }

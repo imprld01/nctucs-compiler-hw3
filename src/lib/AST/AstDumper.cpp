@@ -96,7 +96,7 @@ void AstDumper::visit(const ConstantValueNode &p_constant_value) {
                     p_constant_value.getLocation().line,
                     p_constant_value.getLocation().col,
                     p_constant_value.floatVal());
-    } else if (datatype == P_STRING) { 
+    } else if (datatype == P_STRING) {
         std::printf("constant <line: %u, col: %u> %s\n",
                     p_constant_value.getLocation().line,
                     p_constant_value.getLocation().col,
@@ -110,9 +110,22 @@ void AstDumper::visit(const FunctionNode &p_function) {
     outputIndentationSpace(m_indentation);
 
     // TODO: name, prototype string
-    std::printf("function declaration <line: %u, col: %u> %s %s\n",
-                p_function.getLocation().line, p_function.getLocation().col,
-                "TODO", "TODO");
+    std::printf("function declaration <line: %u, col: %u> %s %s (",
+                p_function.getLocation().line,
+                p_function.getLocation().col,
+                p_function.getFunctionName().c_str(),
+                ptoa(p_function.getReturnType()));
+
+    int first = 1;
+    for (const string &pt : p_function.getParamsType()) {
+        if (first) {
+            std::printf("%s", pt.c_str());
+            first = 0;
+        } else {
+            std::printf(", %s", pt.c_str());
+        }
+    }
+    std::printf(")\n");
 
     incrementIndentation();
     p_function.visitChildNodes(*this);
