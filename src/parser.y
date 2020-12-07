@@ -125,19 +125,21 @@ extern int yylex_destroy(void);
                         ArrType             
 
 %type <comp_stmt_node>  CompoundStatement
+                        ElseOrNot
 %type <const_val_node>  LiteralConstant     
                         IntegerAndReal      
                         StringAndBoolean
 %type <decl_node>       Declaration         
                         FormalArg;
 %type <expr_node>       Expression               
-                        VariableReference   
+                        VariableReference
 %type <func_node>       Function            
                         FunctionDeclaration 
                         FunctionDefinition       
 %type <invo_node>       FunctionInvocation     
 %type <node>            Statement                
-                        Simple                   
+                        Simple
+                        Condition                   
 
 %type <id_list>         IdList
 %type <node_list>       DeclarationList    
@@ -459,19 +461,19 @@ IntegerAndReal:
                   */
 
 Statement:
-    CompoundStatement { $$ = $1; }
+    CompoundStatement
     |
-    Simple { $$ = $1; }
+    Simple
     |
-    Condition { $$ = NULL; }
+    Condition
     |
-    While { $$ = NULL; }
+    While { $$ = NULL; } // TODO
     |
-    For { $$ = NULL; }
+    For { $$ = NULL; } // TODO
     |
-    Return { $$ = NULL; }
+    Return { $$ = NULL; } // TODO
     |
-    FunctionCall { $$ = NULL; }
+    FunctionCall { $$ = NULL; } // TODO
 ;
 
 CompoundStatement:
@@ -534,14 +536,14 @@ Condition:
     IF Expression THEN
     CompoundStatement
     ElseOrNot
-    END IF
+    END IF { $$ = new IfNode(@1.first_line, @1.first_column, $2, $4, $5); }
 ;
 
 ElseOrNot:
     ELSE
-    CompoundStatement
+    CompoundStatement { $$ = $2; }
     |
-    Epsilon
+    Epsilon { $$ = NULL; }
 ;
 
 While:
