@@ -71,7 +71,7 @@ void AstDumper::visit(const VariableNode &p_variable) {
                 p_variable.getLocation().col,
                 p_variable.getVarName().c_str(),
                 p_variable.getVarType().c_str());
-    
+
     incrementIndentation();
     p_variable.visitChildNodes(*this);
     decrementIndentation();
@@ -79,27 +79,30 @@ void AstDumper::visit(const VariableNode &p_variable) {
 
 void AstDumper::visit(const ConstantValueNode &p_constant_value) {
     outputIndentationSpace(m_indentation);
+    p_scalar_type datatype = p_constant_value.getDataType();
 
-    if (p_constant_value.getDataType() == T_BOOL) {
+    if (datatype == P_BOOLEAN) {
         std::printf("constant <line: %u, col: %u> %s\n",
                     p_constant_value.getLocation().line,
                     p_constant_value.getLocation().col,
                     p_constant_value.intVal() ? "true" : "false");
-    } else if (p_constant_value.getDataType() == T_INT) {
+    } else if (datatype == P_INT) {
         std::printf("constant <line: %u, col: %u> %d\n",
                     p_constant_value.getLocation().line,
                     p_constant_value.getLocation().col,
                     p_constant_value.intVal());
-    } else if (p_constant_value.getDataType() == T_DOUBLE) {
+    } else if (datatype == P_REAL) {
         std::printf("constant <line: %u, col: %u> %f\n",
                     p_constant_value.getLocation().line,
                     p_constant_value.getLocation().col,
                     p_constant_value.floatVal());
-    } else {  // string
+    } else if (datatype == P_STRING) { 
         std::printf("constant <line: %u, col: %u> %s\n",
                     p_constant_value.getLocation().line,
                     p_constant_value.getLocation().col,
                     p_constant_value.strVal().c_str());
+    } else {
+        // ERROR
     }
 }
 

@@ -19,6 +19,7 @@
 #include "AST/for.hpp"
 #include "AST/return.hpp"
 #include "AST/AstDumper.hpp"
+#include "utils/p_scalar_type.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -74,11 +75,14 @@ extern int yylex_destroy(void);
 %code requires { #include "AST/for.hpp" }
 %code requires { #include "AST/return.hpp" }
 %code requires { #include "AST/AstDumper.hpp" }
+%code requires { #include "utils/location.hpp" }
+%code requires { #include "utils/p_scalar_type.hpp" }
+
 %code requires { 
-    struct idlocation {
-        uint32_t first_line;
-        uint32_t first_column;
-        char* id;
+    struct var_info {
+        Location        loc;
+        char*           varName;
+        p_scalar_type   varType;
     };
 }
 
@@ -88,27 +92,33 @@ extern int yylex_destroy(void);
     int                         int_type;
     double                      float_type;
     char*                       string_type;
+    p_scalar_type                      data_type;
     
     std::vector<char*>*         string_list;
-    std::vector<idlocation>*    id_list;
+    std::vector<var_info>*      id_list;
     std::vector<AstNode*>*      node_list;
 
     AstNode*                    node;
     CompoundStatementNode*      comp_stmt_node;
     ConstantValueNode*          const_val_node;
     DeclNode*                   decl_node;
+    FunctionNode*               func_node;
+    VariableNode*               var_node;
 };
 
+%type <data_type>       ScalarType ReturnType
 %type <int_type>        NegOrNot INT_LITERAL
 %type <float_type>      REAL_LITERAL
-%type <string_type>     ProgramName ID Type ScalarType STRING_LITERAL TRUE FALSE ArrDecl ArrType
+%type <string_type>     Type ProgramName ID STRING_LITERAL TRUE FALSE ArrDecl ArrType FunctionName
 
 %type <comp_stmt_node>  CompoundStatement
 %type <const_val_node>  LiteralConstant IntegerAndReal StringAndBoolean
-%type <decl_node>       Declaration
+%type <decl_node>       Declaration FormalArg;
+%type <func_node>       Function FunctionDeclaration FunctionDefinition
 
 %type <id_list>         IdList
-%type <node_list>       DeclarationList Declarations FunctionList StatementList
+%type <node_list>       DeclarationList Declarations FunctionList Functions StatementList FormalArgs FormalArgList  
+
 
 
     /* Delimiter */
@@ -159,17 +169,14 @@ Program:
         free($3);
         
         // for (AstNode* node: *$4) root->append(node);
-        root->append($5);
-        
         //free($4);
+
+        root->append($5);
     }
 ;
 
 ProgramName:
-    ID { 
-        $$ = strdup($1); 
-        free($1);
-    }
+    ID
 ;
 
 DeclarationList:
@@ -201,9 +208,15 @@ FunctionList:
 ;
 
 Functions:
-    Function
+    Function {
+        $$ = new vector<AstNode*>();
+        $$->push_back($1);
+    }
     |
-    Functions Function
+    Functions Function {
+        $1->push_back($2);
+        $$ = $1;
+    }
 ;
 
 Function:
@@ -213,29 +226,41 @@ Function:
 ;
 
 FunctionDeclaration:
-    FunctionName L_PARENTHESIS FormalArgList R_PARENTHESIS ReturnType SEMICOLON
+    FunctionName L_PARENTHESIS FormalArgList R_PARENTHESIS ReturnType SEMICOLON {
+        //$$ = new FunctionNode(@1.first_line, @1.first_column, $1, *$3, $5);
+    }
 ;
 
 FunctionDefinition:
     FunctionName L_PARENTHESIS FormalArgList R_PARENTHESIS ReturnType
     CompoundStatement
-    END
+    END {
+        //$$ = new FunctionNode(@1.first_line, @1.first_column, $1, *$3, $5);
+        //$$->append($6);
+    }
 ;
 
 FunctionName:
-    ID
+    ID {
+        $$ = strdup($1);
+        //free($1);
+    }
 ;
 
 FormalArgList:
-    Epsilon
+    Epsilon {
+        //$$ = new vector<int>();
+    }
     |
     FormalArgs
 ;
 
 FormalArgs:
-    FormalArg
+    FormalArg 
     |
-    FormalArgs SEMICOLON FormalArg
+    FormalArgs SEMICOLON FormalArg {
+        //$1->insert($1.end(), $3.begin(), $3.end());
+    }
 ;
 
 FormalArg:
@@ -244,20 +269,20 @@ FormalArg:
 
 IdList:
     ID {
-        $$ = new vector<idlocation>();
-        $$->push_back({@1.first_line, @1.first_column, strdup($1)});
+        $$ = new vector<var_info>();
+        $$->push_back({{@1.first_line, @1.first_column}, strdup($1), P_UNKNOWN});
         free($1);
     }
     |
     IdList COMMA ID {
-        $1->push_back({@3.first_line, @3.first_column, strdup($3)});
+        $1->push_back({{@3.first_line, @3.first_column}, strdup($3), P_UNKNOWN});
         $$ = $1;
         free($3);
     }
 ;
 
 ReturnType:
-    COLON ScalarType
+    COLON ScalarType { $$ = $2; }
     |
     Epsilon
 ;
@@ -269,55 +294,56 @@ ReturnType:
 Declaration:
     VAR IdList COLON Type SEMICOLON {
         $$ = new DeclNode(@1.first_line, @1.first_column);
-        for (const idlocation& p: *$2) {
-            $$->append(new VariableNode(p.first_line, p.first_column, p.id, $4));
+        for (const var_info& v: *$2) {
+            VariableNode* varNode = new VariableNode(v.loc.line, 
+                                                     v.loc.col,
+                                                     v.varName,
+                                                     $4);
+            $$->append(varNode);
+            free(v.varName);
         }
-        free($4);
+        //free($2);
+        //free($4);
     }
     |
     VAR IdList COLON LiteralConstant SEMICOLON {
         $$ = new DeclNode(@1.first_line, @1.first_column);
-        for (const idlocation& p: *$2) {
-            char* varType;
-            switch ($4->getDataType()) {
-            case T_BOOL:   varType = strdup("boolean"); break;
-            case T_INT:    varType = strdup("integer"); break;
-            case T_DOUBLE: varType = strdup("real");    break;
-            case T_STRING: varType = strdup("string");  break;
-            }
-            VariableNode* varNode = new VariableNode(p.first_line, 
-                                                     p.first_column, 
-                                                     p.id, 
-                                                     varType);
+        for (const var_info& v: *$2) {
+            VariableNode* varNode = new VariableNode(v.loc.line, 
+                                                     v.loc.col, 
+                                                     v.varName, 
+                                                     $4->getDataType());
             varNode->append($4);
             $$->append(varNode);
-            free(varType);
+            //free(v.varName);
         }
+        //free($2);
     }
 ;
 
 Type:
-    ScalarType
+    ScalarType { $$ = ptoa($1); }
     |
     ArrType
 ;
 
 ScalarType:
-    INTEGER { $$ = strdup("integer"); }
+    INTEGER { $$ = P_INT; }
     |
-    REAL    { $$ = strdup("real");    }
+    REAL    { $$ = P_REAL; }
     |
-    STRING  { $$ = strdup("string");  }
+    STRING  { $$ = P_STRING; }
     |
-    BOOLEAN { $$ = strdup("boolean"); }
+    BOOLEAN { $$ = P_BOOLEAN; }
 ;
 
 ArrType:
     ArrDecl ScalarType {
-        char* ret = (char*) malloc(strlen($2) + 1 + strlen($1) + 1);
-        sprintf(ret, "%s %s", $2, $1);
-        free($1);
-        free($2);
+        char* ret = (char*) malloc(10 + 1 + strlen($1) + 1);
+        char* tp = ptoa($2);
+        sprintf(ret, "%s %s", tp, $1);
+        //free($1);
+        //free(tp);
         $$ = ret;
     }
 ;
@@ -340,10 +366,10 @@ ArrDecl:
 LiteralConstant:
     NegOrNot INT_LITERAL {
         if ($1) {
-            $$ = new ConstantValueNode(@1.first_line, @1.first_column, -$2, T_INT);
+            $$ = new ConstantValueNode(@1.first_line, @1.first_column, -$2, P_INT);
         }
         else {
-            $$ = new ConstantValueNode(@2.first_line, @2.first_column, $2, T_INT);
+            $$ = new ConstantValueNode(@2.first_line, @2.first_column, $2, P_INT);
         }
     }
     |
@@ -375,22 +401,22 @@ StringAndBoolean:
         char* str = strdup($1);
         str[strlen(str) - 1] = '\0';
         $$ = new ConstantValueNode(@1.first_line, @1.first_column, str + 1);
-        free($1);
-        free(str);
+        //free($1);
+        //free(str);
     }
     |
     TRUE {
-        $$ = new ConstantValueNode(@1.first_line, @1.first_column, 1, T_BOOL);
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, 1, P_BOOLEAN);
     }
     |
     FALSE {
-        $$ = new ConstantValueNode(@1.first_line, @1.first_column, 0, T_BOOL);
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, 0, P_BOOLEAN);
     }
 ;
 
 IntegerAndReal:
     INT_LITERAL {
-        $$ = new ConstantValueNode(@1.first_line, @1.first_column, $1, T_INT);
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, $1, P_INT);
     }
     |
     REAL_LITERAL {

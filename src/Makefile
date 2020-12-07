@@ -14,8 +14,12 @@ AST := $(shell find $(ASTDIR) -name '*.cpp')
 VISITORDIR = lib/visitor/
 VISITOR := $(shell find $(VISITORDIR) -name '*.cpp')
 
+PUTILDIR = lib/utils/
+PUTIL := $(shell find $(PUTILDIR) -name '*.cpp')
+
 SRC := $(AST) \
-	   $(VISITOR)
+	   $(VISITOR) \
+	   $(PUTIL)
 
 EXEC = $(PARSER)
 OBJS = $(PARSER:=.cpp) \
