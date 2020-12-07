@@ -10,12 +10,9 @@ using std::string;
 class DeclNode : public AstNode {
    public:
     // variable declaration
-    DeclNode(const uint32_t line, const uint32_t col,
-             const char* varName, const char* varType);
+    DeclNode(const uint32_t line, const uint32_t col);
     ~DeclNode() = default;
     void visitedBy(AstNodeVisitor& visitor) const;
-    const string varName;
-    const string varType;
 };
 
 #endif

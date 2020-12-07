@@ -74,22 +74,41 @@ extern int yylex_destroy(void);
 %code requires { #include "AST/for.hpp" }
 %code requires { #include "AST/return.hpp" }
 %code requires { #include "AST/AstDumper.hpp" }
+%code requires { 
+    struct idlocation {
+        uint32_t first_line;
+        uint32_t first_column;
+        char* id;
+    };
+}
 
     /* For yylval */
 %union {
     /* basic semantic value */
-    int                     int_type;
-    double                  float_type;
-    char*                   string_type;
-    AstNode*                node;
-    std::vector<AstNode*>*  node_list;
-    std::vector<char*>*     string_list;
+    int                         int_type;
+    double                      float_type;
+    char*                       string_type;
+    
+    std::vector<char*>*         string_list;
+    std::vector<idlocation>*    id_list;
+    std::vector<AstNode*>*      node_list;
+
+    AstNode*                    node;
+    CompoundStatementNode*      comp_stmt_node;
+    ConstantValueNode*          const_val_node;
+    DeclNode*                   decl_node;
 };
 
-%type <string_type>   ProgramName ID Type ScalarType ArrType
-%type <node_list>     DeclarationList Declarations Declaration FunctionList StatementList
-%type <string_list>   IdList
-%type <node>          CompoundStatement
+%type <int_type>        NegOrNot INT_LITERAL
+%type <float_type>      REAL_LITERAL
+%type <string_type>     ProgramName ID Type ScalarType STRING_LITERAL TRUE FALSE ArrDecl ArrType
+
+%type <comp_stmt_node>  CompoundStatement
+%type <const_val_node>  LiteralConstant IntegerAndReal StringAndBoolean
+%type <decl_node>       Declaration
+
+%type <id_list>         IdList
+%type <node_list>       DeclarationList Declarations FunctionList StatementList
 
 
     /* Delimiter */
@@ -135,11 +154,14 @@ Program:
     /* End of ProgramBody */
     END {
         root = new ProgramNode(@1.first_line, @1.first_column, $1);
+        
         for (AstNode* node: *$3) root->append(node);
-        for (AstNode* node: *$4) root->append(node);
-        root->append($5);
         free($3);
-        free($4);
+        
+        // for (AstNode* node: *$4) root->append(node);
+        root->append($5);
+        
+        //free($4);
     }
 ;
 
@@ -157,10 +179,13 @@ DeclarationList:
 ;
 
 Declarations:
-    Declaration 
+    Declaration {
+        $$ = new vector<AstNode*>();
+        $$->push_back($1);
+    }
     |
     Declarations Declaration {
-        $1->insert($1->end(), $2->begin(), $2->end());
+        $1->push_back($2);
         $$ = $1;
     }
 ;
@@ -219,15 +244,15 @@ FormalArg:
 
 IdList:
     ID {
-        $$ = new vector<char*>();
-        $$->push_back(strdup($1));
+        $$ = new vector<idlocation>();
+        $$->push_back({@1.first_line, @1.first_column, strdup($1)});
         free($1);
     }
     |
     IdList COMMA ID {
-        $1->push_back(strdup($3));
+        $1->push_back({@3.first_line, @3.first_column, strdup($3)});
         $$ = $1;
-        free($1);
+        free($3);
     }
 ;
 
@@ -243,18 +268,31 @@ ReturnType:
 
 Declaration:
     VAR IdList COLON Type SEMICOLON {
-        char* varType = $4;
-        $$ = new vector<AstNode*>();
-        for (char* varName: *$2) {
-            DeclNode* node = new DeclNode(@1.first_line, @1.first_column, varName, varType);
-            $$->push_back(node);
-            free(varName);
+        $$ = new DeclNode(@1.first_line, @1.first_column);
+        for (const idlocation& p: *$2) {
+            $$->append(new VariableNode(p.first_line, p.first_column, p.id, $4));
         }
         free($4);
     }
     |
     VAR IdList COLON LiteralConstant SEMICOLON {
-        $$ = new vector<AstNode*>();
+        $$ = new DeclNode(@1.first_line, @1.first_column);
+        for (const idlocation& p: *$2) {
+            char* varType;
+            switch ($4->getDataType()) {
+            case T_BOOL:   varType = strdup("boolean"); break;
+            case T_INT:    varType = strdup("integer"); break;
+            case T_DOUBLE: varType = strdup("real");    break;
+            case T_STRING: varType = strdup("string");  break;
+            }
+            VariableNode* varNode = new VariableNode(p.first_line, 
+                                                     p.first_column, 
+                                                     p.id, 
+                                                     varType);
+            varNode->append($4);
+            $$->append(varNode);
+            free(varType);
+        }
     }
 ;
 
@@ -276,44 +314,88 @@ ScalarType:
 
 ArrType:
     ArrDecl ScalarType {
-        $$ = (char*) malloc(strlen($2) + 2 + 1);
-        strcpy($$, $2);
-        strcat($$, "[]");
+        char* ret = (char*) malloc(strlen($2) + 1 + strlen($1) + 1);
+        sprintf(ret, "%s %s", $2, $1);
+        free($1);
+        free($2);
+        $$ = ret;
     }
 ;
 
 ArrDecl:
-    ARRAY INT_LITERAL OF
+    ARRAY INT_LITERAL OF {
+        char* ret = (char*) malloc(64);
+        sprintf(ret, "[%d]", $2);
+        $$ = ret;
+    }
     |
-    ArrDecl ARRAY INT_LITERAL OF
+    ArrDecl ARRAY INT_LITERAL OF {
+        char* ret = (char*) malloc(sizeof($1) + 64);
+        sprintf(ret, "%s[%d]", $1, $3);
+        free($1);
+        $$ = ret;
+    }
 ;
 
 LiteralConstant:
-    NegOrNot INT_LITERAL
+    NegOrNot INT_LITERAL {
+        if ($1) {
+            $$ = new ConstantValueNode(@1.first_line, @1.first_column, -$2, T_INT);
+        }
+        else {
+            $$ = new ConstantValueNode(@2.first_line, @2.first_column, $2, T_INT);
+        }
+    }
     |
-    NegOrNot REAL_LITERAL
+    NegOrNot REAL_LITERAL {
+        if ($1) {
+            $$ = new ConstantValueNode(@1.first_line, @1.first_column, -$2);
+        }
+        else {
+            $$ = new ConstantValueNode(@2.first_line, @2.first_column, $2);
+        }
+    }
     |
     StringAndBoolean
 ;
 
 NegOrNot:
-    Epsilon
+    Epsilon {
+        $$ = 0;
+    }
     |
-    MINUS %prec UNARY_MINUS
+    MINUS %prec UNARY_MINUS {
+        $$ = 1;
+    }
 ;
 
 StringAndBoolean:
-    STRING_LITERAL
+    STRING_LITERAL {
+        // remove quotes
+        char* str = strdup($1);
+        str[strlen(str) - 1] = '\0';
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, str + 1);
+        free($1);
+        free(str);
+    }
     |
-    TRUE
+    TRUE {
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, 1, T_BOOL);
+    }
     |
-    FALSE
+    FALSE {
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, 0, T_BOOL);
+    }
 ;
 
 IntegerAndReal:
-    INT_LITERAL
+    INT_LITERAL {
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, $1, T_INT);
+    }
     |
-    REAL_LITERAL
+    REAL_LITERAL {
+        $$ = new ConstantValueNode(@1.first_line, @1.first_column, $1);
+    }
 ;
 
     /*
@@ -341,8 +423,8 @@ CompoundStatement:
     DeclarationList
     StatementList
     END {
-        $$ = (AstNode*) new CompoundStatementNode(@1.first_line, @1.first_column);
-        // for (AstNode* node: *$2) $$->append(node);
+        $$ = new CompoundStatementNode(@1.first_line, @1.first_column);
+        for (AstNode* node: *$2) $$->append(node);
         // for (AstNode* node: *$3) $$->append(node);
     }
 ;

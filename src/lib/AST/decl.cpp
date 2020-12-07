@@ -1,8 +1,7 @@
 #include "AST/decl.hpp"
 
-DeclNode::DeclNode(const uint32_t line, const uint32_t col, 
-                   const char* varName, const char* varType)
-    : AstNode{line, col}, varName(varName), varType(varType) {}
+DeclNode::DeclNode(const uint32_t line, const uint32_t col)
+    : AstNode{line, col} {}
 
 void DeclNode::visitedBy(AstNodeVisitor& visitor) const {
     visitor.visit(*this);

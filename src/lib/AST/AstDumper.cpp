@@ -35,14 +35,16 @@ static void outputIndentationSpace(const uint32_t indentation) {
     std::printf("%*s", indentation, "");
 }
 
-void AstDumper::visit(const AstNode& node) { node.visitedBy(*this); }
+void AstDumper::visit(const AstNode &node) { node.visitedBy(*this); }
 
 void AstDumper::visit(const ProgramNode &p_program) {
     outputIndentationSpace(m_indentation);
 
     std::printf("program <line: %u, col: %u> %s %s\n",
-                p_program.getLocation().line, p_program.getLocation().col,
-                p_program.getNameCString().c_str(), "void");
+                p_program.getLocation().line,
+                p_program.getLocation().col,
+                p_program.getNameCString().c_str(),
+                "void");
 
     incrementIndentation();
     p_program.visitChildNodes(*this);
@@ -52,8 +54,9 @@ void AstDumper::visit(const ProgramNode &p_program) {
 void AstDumper::visit(const DeclNode &p_decl) {
     outputIndentationSpace(m_indentation);
 
-    std::printf("declaration <line: %u, col: %u> %s %s\n", p_decl.getLocation().line,
-                p_decl.getLocation().col, p_decl.varName.c_str(), p_decl.varType.c_str());
+    std::printf("declaration <line: %u, col: %u>\n",
+                p_decl.getLocation().line,
+                p_decl.getLocation().col);
 
     incrementIndentation();
     p_decl.visitChildNodes(*this);
@@ -63,11 +66,12 @@ void AstDumper::visit(const DeclNode &p_decl) {
 void AstDumper::visit(const VariableNode &p_variable) {
     outputIndentationSpace(m_indentation);
 
-    // TODO: name, type
     std::printf("variable <line: %u, col: %u> %s %s\n",
-                p_variable.getLocation().line, p_variable.getLocation().col,
-                "TODO", "TODO");
-
+                p_variable.getLocation().line,
+                p_variable.getLocation().col,
+                p_variable.getVarName().c_str(),
+                p_variable.getVarType().c_str());
+    
     incrementIndentation();
     p_variable.visitChildNodes(*this);
     decrementIndentation();
@@ -76,11 +80,27 @@ void AstDumper::visit(const VariableNode &p_variable) {
 void AstDumper::visit(const ConstantValueNode &p_constant_value) {
     outputIndentationSpace(m_indentation);
 
-    // TODO: string of constant value
-    std::printf("constant <line: %u, col: %u> %s\n",
-                p_constant_value.getLocation().line,
-                p_constant_value.getLocation().col,
-                "TODO");
+    if (p_constant_value.getDataType() == T_BOOL) {
+        std::printf("constant <line: %u, col: %u> %s\n",
+                    p_constant_value.getLocation().line,
+                    p_constant_value.getLocation().col,
+                    p_constant_value.intVal() ? "true" : "false");
+    } else if (p_constant_value.getDataType() == T_INT) {
+        std::printf("constant <line: %u, col: %u> %d\n",
+                    p_constant_value.getLocation().line,
+                    p_constant_value.getLocation().col,
+                    p_constant_value.intVal());
+    } else if (p_constant_value.getDataType() == T_DOUBLE) {
+        std::printf("constant <line: %u, col: %u> %f\n",
+                    p_constant_value.getLocation().line,
+                    p_constant_value.getLocation().col,
+                    p_constant_value.floatVal());
+    } else {  // string
+        std::printf("constant <line: %u, col: %u> %s\n",
+                    p_constant_value.getLocation().line,
+                    p_constant_value.getLocation().col,
+                    p_constant_value.strVal().c_str());
+    }
 }
 
 void AstDumper::visit(const FunctionNode &p_function) {
