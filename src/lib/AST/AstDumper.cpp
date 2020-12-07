@@ -178,7 +178,6 @@ void AstDumper::visit(const UnaryOperatorNode &p_un_op) {
                 p_un_op.getLocation().col,
                 poptoa(p_un_op.getOperator()));
 
-
     incrementIndentation();
     p_un_op.visitChildNodes(*this);
     decrementIndentation();
@@ -201,7 +200,6 @@ void AstDumper::visit(const FunctionInvocationNode &p_func_invocation) {
 void AstDumper::visit(const VariableReferenceNode &p_variable_ref) {
     outputIndentationSpace(m_indentation);
 
-    // TODO: variable name
     std::printf("variable reference <line: %u, col: %u> %s\n",
                 p_variable_ref.getLocation().line,
                 p_variable_ref.getLocation().col,

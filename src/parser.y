@@ -487,7 +487,7 @@ CompoundStatement:
 
 Simple:
     VariableReference ASSIGN Expression SEMICOLON {
-        $$ = new AssignmentNode(@1.first_line, @1.first_column);
+        $$ = new AssignmentNode(@2.first_line, @2.first_column);
         if ($1) $$->append($1); // TODO
         if ($3) $$->append($3); // TODO
     }
