@@ -139,7 +139,8 @@ extern int yylex_destroy(void);
 %type <invo_node>       FunctionInvocation     
 %type <node>            Statement                
                         Simple
-                        Condition                   
+                        Condition
+                        While                   
 
 %type <id_list>         IdList
 %type <node_list>       DeclarationList    
@@ -467,7 +468,7 @@ Statement:
     |
     Condition
     |
-    While { $$ = NULL; } // TODO
+    While
     |
     For { $$ = NULL; } // TODO
     |
@@ -549,7 +550,9 @@ ElseOrNot:
 While:
     WHILE Expression DO
     CompoundStatement
-    END DO
+    END DO {
+        $$ = new WhileNode(@1.first_line, @1.first_column, $2, $4);
+    }
 ;
 
 For:
