@@ -140,7 +140,8 @@ extern int yylex_destroy(void);
 %type <node>            Statement                
                         Simple
                         Condition
-                        While                   
+                        While
+                        For                   
 
 %type <id_list>         IdList
 %type <node_list>       DeclarationList    
@@ -470,7 +471,7 @@ Statement:
     |
     While
     |
-    For { $$ = NULL; } // TODO
+    For
     |
     Return { $$ = NULL; } // TODO
     |
@@ -558,7 +559,42 @@ While:
 For:
     FOR ID ASSIGN INT_LITERAL TO INT_LITERAL DO
     CompoundStatement
-    END DO
+    END DO {
+        VariableNode* varNode = new VariableNode(@2.first_line, 
+                                                 @2.first_column,
+                                                 $2,
+                                                 P_INT);
+        DeclNode* declNode = new DeclNode(@2.first_line,
+                                          @2.first_column);
+        declNode->append(varNode);
+
+        VariableReferenceNode* varRefNode = new VariableReferenceNode(@2.first_line,
+                                                                      @2.first_column,
+                                                                      $2);
+        ConstantValueNode* initConstVal = new ConstantValueNode(@4.first_line,
+                                                                @4.first_column,
+                                                                $4,
+                                                                P_INT);
+        AssignmentNode *asgnNode = new AssignmentNode(@3.first_line,  
+                                                      @3.first_column);
+        asgnNode->append(varRefNode);
+        asgnNode->append(initConstVal);
+
+        ConstantValueNode* termConstVal = new ConstantValueNode(@6.first_line,
+                                                                @6.first_column,
+                                                                $6,
+                                                                P_INT);
+
+        $$ = new ForNode(@1.first_line,
+                         @1.first_column, 
+                         declNode, 
+                         asgnNode, 
+                         termConstVal, 
+                         $8,
+                         $4,
+                         $6);
+        free($2);
+    }
 ;
 
 Return:
