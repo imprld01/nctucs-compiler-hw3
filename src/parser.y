@@ -115,9 +115,10 @@ extern int yylex_destroy(void);
 %type <const_val_node>  LiteralConstant IntegerAndReal StringAndBoolean
 %type <decl_node>       Declaration FormalArg;
 %type <func_node>       Function FunctionDeclaration FunctionDefinition
+%type <node>            Statement Simple
 
 %type <id_list>         IdList
-%type <node_list>       DeclarationList Declarations FunctionList Functions StatementList FormalArgs FormalArgList  
+%type <node_list>       DeclarationList Declarations FunctionList Functions StatementList Statements FormalArgs FormalArgList  
 
 
 
@@ -241,9 +242,7 @@ FunctionDefinition:
 ;
 
 FunctionName:
-    ID {
-        $$ = $1;
-    }
+    ID
 ;
 
 FormalArgList:
@@ -390,13 +389,9 @@ LiteralConstant:
 ;
 
 NegOrNot:
-    Epsilon {
-        $$ = 0;
-    }
+    Epsilon { $$ = 0; }
     |
-    MINUS %prec UNARY_MINUS {
-        $$ = 1;
-    }
+    MINUS %prec UNARY_MINUS { $$ = 1; }
 ;
 
 StringAndBoolean:
@@ -433,19 +428,19 @@ IntegerAndReal:
                   */
 
 Statement:
-    CompoundStatement
+    CompoundStatement { $$ = $1; }
     |
-    Simple
+    Simple { $$ = $1; }
     |
-    Condition
+    Condition { $$ = NULL; }
     |
-    While
+    While { $$ = NULL; }
     |
-    For
+    For { $$ = NULL; }
     |
-    Return
+    Return { $$ = NULL; }
     |
-    FunctionCall
+    FunctionCall { $$ = NULL; }
 ;
 
 CompoundStatement:
@@ -455,16 +450,26 @@ CompoundStatement:
     END {
         $$ = new CompoundStatementNode(@1.first_line, @1.first_column);
         for (AstNode* node: *$2) $$->append(node);
-        // for (AstNode* node: *$3) $$->append(node);
+        for (AstNode* node: *$3) if (node) $$->append(node);
     }
 ;
 
 Simple:
-    VariableReference ASSIGN Expression SEMICOLON
+    VariableReference ASSIGN Expression SEMICOLON {
+        $$ = new AssignmentNode(@1.first_line, @1.first_column);
+        //$$->append($1);
+        //$$->append($3);
+    }
     |
-    PRINT Expression SEMICOLON
+    PRINT Expression SEMICOLON {
+        $$ = new PrintNode(@1.first_line, @1.first_column);
+        //$$->append($2);
+    }
     |
-    READ VariableReference SEMICOLON
+    READ VariableReference SEMICOLON {
+        $$ = new ReadNode(@1.first_line, @1.first_column);
+        //$$->append($2);
+    }
 ;
 
 VariableReference:
@@ -534,15 +539,21 @@ Expressions:
 ;
 
 StatementList:
-    Epsilon
+    Epsilon { $$ = new vector<AstNode*>(); }
     |
     Statements
 ;
 
 Statements:
-    Statement
+    Statement {
+        $$ = new vector<AstNode*>();
+        $$->push_back($1);
+    }
     |
-    Statements Statement
+    Statements Statement {
+        $1->push_back($2);
+        $$ = $1;
+    }
 ;
 
 Expression:

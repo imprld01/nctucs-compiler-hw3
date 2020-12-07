@@ -4,12 +4,12 @@
 #include "AST/ast.hpp"
 
 class AssignmentNode : public AstNode {
-  public:
-    AssignmentNode(const uint32_t line, const uint32_t col
-                   /* TODO: variable reference, expression */);
+   public:
+    AssignmentNode(const uint32_t line, const uint32_t col);
     ~AssignmentNode() = default;
+    void visitedBy(AstNodeVisitor& visitor) const;
 
-  private:
+   private:
     // TODO: variable reference, expression
 };
 

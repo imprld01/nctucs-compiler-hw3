@@ -4,12 +4,12 @@
 #include "AST/ast.hpp"
 
 class PrintNode : public AstNode {
-  public:
-    PrintNode(const uint32_t line, const uint32_t col
-              /* TODO: expression */);
+   public:
+    PrintNode(const uint32_t line, const uint32_t col);
     ~PrintNode() = default;
+    void visitedBy(AstNodeVisitor& visitor) const override;
 
-  private:
+   private:
     // TODO: expression
 };
 

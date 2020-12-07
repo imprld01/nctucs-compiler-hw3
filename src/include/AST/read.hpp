@@ -4,13 +4,12 @@
 #include "AST/ast.hpp"
 
 class ReadNode : public AstNode {
-  public:
-    ReadNode(const uint32_t line, const uint32_t col
-             /* TODO: variable reference */);
+   public:
+    ReadNode(const uint32_t line, const uint32_t col);
     ~ReadNode() = default;
+    void visitedBy(AstNodeVisitor& visitor) const override;
 
-  private:
-    // TODO: variable reference
+   private:
 };
 
 #endif
