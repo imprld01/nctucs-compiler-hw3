@@ -185,14 +185,13 @@ void AstDumper::visit(const UnaryOperatorNode &p_un_op) {
 }
 
 void AstDumper::visit(const FunctionInvocationNode &p_func_invocation) {
-    return;
+    
     outputIndentationSpace(m_indentation);
 
-    // TODO: function name
     std::printf("function invocation <line: %u, col: %u> %s\n",
                 p_func_invocation.getLocation().line,
                 p_func_invocation.getLocation().col,
-                "TODO");
+                p_func_invocation.getFunctionName());
 
     incrementIndentation();
     p_func_invocation.visitChildNodes(*this);

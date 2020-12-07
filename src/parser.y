@@ -105,6 +105,7 @@ extern int yylex_destroy(void);
     DeclNode*                   decl_node;
     ExpressionNode*             expr_node;
     FunctionNode*               func_node;
+    FunctionInvocationNode*     invo_node;
     VariableNode*               var_node;
 };
 
@@ -129,11 +130,12 @@ extern int yylex_destroy(void);
                         StringAndBoolean
 %type <decl_node>       Declaration         
                         FormalArg;
+%type <expr_node>       Expression               
+                        VariableReference   
 %type <func_node>       Function            
                         FunctionDeclaration 
                         FunctionDefinition       
-%type <expr_node>       Expression               
-                        VariableReference        
+%type <invo_node>       FunctionInvocation     
 %type <node>            Statement                
                         Simple                   
 
@@ -148,6 +150,8 @@ extern int yylex_destroy(void);
                         FormalArgList      
                         ArrRefList         
                         ArrRefs
+                        ExpressionList
+                        Expressions
 
     /* Delimiter */
 %token COMMA SEMICOLON COLON
@@ -561,19 +565,30 @@ FunctionCall:
 ;
 
 FunctionInvocation:
-    ID L_PARENTHESIS ExpressionList R_PARENTHESIS
+    ID L_PARENTHESIS ExpressionList R_PARENTHESIS {
+        $$ = new FunctionInvocationNode(@1.first_line, @1.first_column, $1);
+        for (AstNode* exprNode: *$3) $$->append(exprNode);
+        free($3);
+        free($1);
+    }
 ;
 
 ExpressionList:
-    Epsilon
+    Epsilon { $$ = new vector<AstNode*>(); }
     |
     Expressions
 ;
 
 Expressions:
-    Expression
+    Expression {
+        $$ = new vector<AstNode*>();
+        $$->push_back((AstNode*) $1);
+    }
     |
-    Expressions COMMA Expression
+    Expressions COMMA Expression {
+        $1->push_back((AstNode*) $3);
+        $$ = $1;
+    }
 ;
 
 StatementList:
@@ -711,13 +726,13 @@ Expression:
                                     $3);
     }
     |
-    IntegerAndReal { $$ = $1; }
+    IntegerAndReal
     |
-    StringAndBoolean { $$ = $1; }
+    StringAndBoolean
     |
-    VariableReference { $$ = $1; }
+    VariableReference
     |
-    FunctionInvocation { $$ = NULL; }
+    FunctionInvocation
 ;
 
     /*
