@@ -115,7 +115,7 @@ extern int yylex_destroy(void);
 %type <const_val_node>  LiteralConstant IntegerAndReal StringAndBoolean
 %type <decl_node>       Declaration FormalArg;
 %type <func_node>       Function FunctionDeclaration FunctionDefinition
-%type <node>            Statement Simple
+%type <node>            Statement Simple Expression VariableReference
 
 %type <id_list>         IdList
 %type <node_list>       DeclarationList Declarations FunctionList Functions StatementList Statements FormalArgs FormalArgList  
@@ -450,30 +450,30 @@ CompoundStatement:
     END {
         $$ = new CompoundStatementNode(@1.first_line, @1.first_column);
         for (AstNode* node: *$2) $$->append(node);
-        for (AstNode* node: *$3) if (node) $$->append(node);
+        for (AstNode* node: *$3) if (node) $$->append(node); // TODO
     }
 ;
 
 Simple:
     VariableReference ASSIGN Expression SEMICOLON {
         $$ = new AssignmentNode(@1.first_line, @1.first_column);
-        //$$->append($1);
-        //$$->append($3);
+        if ($1) $$->append($1); // TODO
+        if ($3) $$->append($3); // TODO
     }
     |
     PRINT Expression SEMICOLON {
         $$ = new PrintNode(@1.first_line, @1.first_column);
-        //$$->append($2);
+        if ($2) $$->append($2); // TODO
     }
     |
     READ VariableReference SEMICOLON {
         $$ = new ReadNode(@1.first_line, @1.first_column);
-        //$$->append($2);
+        if ($2) $$->append($2); // TODO
     }
 ;
 
 VariableReference:
-    ID ArrRefList
+    ID ArrRefList { $$ = NULL; }
 ;
 
 ArrRefList:
@@ -557,45 +557,45 @@ Statements:
 ;
 
 Expression:
-    L_PARENTHESIS Expression R_PARENTHESIS
+    L_PARENTHESIS Expression R_PARENTHESIS { $$ = NULL; }
     |
-    MINUS Expression %prec UNARY_MINUS
+    MINUS Expression %prec UNARY_MINUS { $$ = NULL; }
     |
-    Expression MULTIPLY Expression
+    Expression MULTIPLY Expression { $$ = NULL; }
     |
-    Expression DIVIDE Expression
+    Expression DIVIDE Expression { $$ = NULL; }
     |
-    Expression MOD Expression
+    Expression MOD Expression { $$ = NULL; }
     |
-    Expression PLUS Expression
+    Expression PLUS Expression { $$ = NULL; }
     |
-    Expression MINUS Expression
+    Expression MINUS Expression { $$ = NULL; }
     |
-    Expression LESS Expression
+    Expression LESS Expression { $$ = NULL; }
     |
-    Expression LESS_OR_EQUAL Expression
+    Expression LESS_OR_EQUAL Expression { $$ = NULL; }
     |
-    Expression GREATER Expression
+    Expression GREATER Expression { $$ = NULL; }
     |
-    Expression GREATER_OR_EQUAL Expression
+    Expression GREATER_OR_EQUAL Expression { $$ = NULL; }
     |
-    Expression EQUAL Expression
+    Expression EQUAL Expression { $$ = NULL; }
     |
-    Expression NOT_EQUAL Expression
+    Expression NOT_EQUAL Expression { $$ = NULL; }
     |
-    NOT Expression
+    NOT Expression { $$ = NULL; }
     |
-    Expression AND Expression
+    Expression AND Expression { $$ = NULL; }
     |
-    Expression OR Expression
+    Expression OR Expression { $$ = NULL; }
     |
-    IntegerAndReal
+    IntegerAndReal { $$ = NULL; }
     |
-    StringAndBoolean
+    StringAndBoolean { $$ = NULL; }
     |
-    VariableReference
+    VariableReference { $$ = NULL; }
     |
-    FunctionInvocation
+    FunctionInvocation { $$ = NULL; }
 ;
 
     /*
