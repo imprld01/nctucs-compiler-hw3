@@ -133,10 +133,10 @@ extern int yylex_destroy(void);
                         FormalArg;
 %type <expr_node>       Expression               
                         VariableReference
+                        FunctionInvocation     
 %type <func_node>       Function            
                         FunctionDeclaration 
                         FunctionDefinition       
-%type <invo_node>       FunctionInvocation     
 %type <node>            Statement                
                         Simple
                         Condition
@@ -476,7 +476,7 @@ Statement:
     |
     Return
     |
-    FunctionCall { $$ = NULL; } // TODO
+    FunctionCall
 ;
 
 CompoundStatement:
