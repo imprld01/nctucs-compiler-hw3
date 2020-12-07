@@ -28,4 +28,4 @@ p_scalar_type ConstantValueNode::getDataType() const { return data_type; }
 bool ConstantValueNode::boolVal() const { return int_value; }
 int ConstantValueNode::intVal() const { return int_value; }
 double ConstantValueNode::floatVal() const { return double_value; }
-std::string ConstantValueNode::strVal() const { return string_value; }
+const char* ConstantValueNode::strVal() const { return string_value.c_str(); }

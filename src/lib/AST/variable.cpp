@@ -19,5 +19,5 @@ void VariableNode::visitedBy(AstNodeVisitor& visitor) const {
     visitor.visit(*this);
 }
 
-std::string VariableNode::getVarName() const { return varName; }
-std::string VariableNode::getVarType() const { return varType; }
+const char* VariableNode::getVarName() const { return varName.c_str(); }
+const char* VariableNode::getVarType() const { return varType.c_str(); }

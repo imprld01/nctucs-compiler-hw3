@@ -45,7 +45,7 @@ void AstDumper::visit(const ProgramNode &p_program) {
     std::printf("program <line: %u, col: %u> %s %s\n",
                 p_program.getLocation().line,
                 p_program.getLocation().col,
-                p_program.getNameCString().c_str(),
+                p_program.getProgramName(),
                 "void");
 
     incrementIndentation();
@@ -71,8 +71,8 @@ void AstDumper::visit(const VariableNode &p_variable) {
     std::printf("variable <line: %u, col: %u> %s %s\n",
                 p_variable.getLocation().line,
                 p_variable.getLocation().col,
-                p_variable.getVarName().c_str(),
-                p_variable.getVarType().c_str());
+                p_variable.getVarName(),
+                p_variable.getVarType());
 
     incrementIndentation();
     p_variable.visitChildNodes(*this);
@@ -102,7 +102,7 @@ void AstDumper::visit(const ConstantValueNode &p_constant_value) {
         std::printf("constant <line: %u, col: %u> %s\n",
                     p_constant_value.getLocation().line,
                     p_constant_value.getLocation().col,
-                    p_constant_value.strVal().c_str());
+                    p_constant_value.strVal());
     } else {
         // ERROR
     }
@@ -115,7 +115,7 @@ void AstDumper::visit(const FunctionNode &p_function) {
     std::printf("function declaration <line: %u, col: %u> %s %s (",
                 p_function.getLocation().line,
                 p_function.getLocation().col,
-                p_function.getFunctionName().c_str(),
+                p_function.getFunctionName(),
                 ptptoa(p_function.getReturnType()));
 
     int first = 1;
@@ -205,7 +205,7 @@ void AstDumper::visit(const VariableReferenceNode &p_variable_ref) {
     std::printf("variable reference <line: %u, col: %u> %s\n",
                 p_variable_ref.getLocation().line,
                 p_variable_ref.getLocation().col,
-                "TODO");
+                p_variable_ref.getVarName());
 
     incrementIndentation();
     p_variable_ref.visitChildNodes(*this);

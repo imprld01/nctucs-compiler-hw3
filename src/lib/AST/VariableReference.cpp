@@ -6,8 +6,8 @@ VariableReferenceNode::VariableReferenceNode(const uint32_t line,
                                              const char* varName)
     : ExpressionNode{line, col}, varName(varName) {}
 
-const std::string& VariableReferenceNode::getVarName() const {
-    return varName;
+const char* VariableReferenceNode::getVarName() const {
+    return varName.c_str();
 }
 
 void VariableReferenceNode::visitedBy(AstNodeVisitor& visitor) const {

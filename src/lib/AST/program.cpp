@@ -8,7 +8,7 @@ ProgramNode::ProgramNode(const uint32_t line,
                          const char* p_name)
     : AstNode{line, col}, name(p_name) {}
 
-const std::string& ProgramNode::getNameCString() const { return name; }
+const char* ProgramNode::getProgramName() const { return name.c_str(); }
 
 void ProgramNode::visitedBy(AstNodeVisitor& visitor) const {
     visitor.visit(*this);

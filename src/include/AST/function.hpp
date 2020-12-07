@@ -19,7 +19,7 @@ class FunctionNode : public AstNode {
     void visitedBy(AstNodeVisitor& visitor) const override;
     void addParam(const DeclNode* declNode);
 
-    const std::string& getFunctionName() const;
+    const char* getFunctionName() const;
     const std::vector<std::string>& getParamsType() const;
     const p_scalar_type getReturnType() const;
 

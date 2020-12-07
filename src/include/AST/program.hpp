@@ -10,7 +10,7 @@ class ProgramNode : public AstNode {
    public:
     ProgramNode(const uint32_t line, const uint32_t col, const char* p_name);
     ~ProgramNode() = default;
-    const std::string& getNameCString() const;
+    const char* getProgramName() const;
     void visitedBy(AstNodeVisitor& visitor) const override;
 
    private:

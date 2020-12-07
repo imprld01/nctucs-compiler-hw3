@@ -14,8 +14,8 @@ class VariableNode : public AstNode {
                  const char* varName, const p_scalar_type vt);
     ~VariableNode() = default;
     void visitedBy(AstNodeVisitor& visitor) const override;
-    std::string getVarName() const;
-    std::string getVarType() const;
+    const char* getVarName() const;
+    const char* getVarType() const;
 
    private:
     std::string varName, varType;

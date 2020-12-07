@@ -22,8 +22,8 @@ void FunctionNode::visitedBy(AstNodeVisitor& visitor) const {
     visitor.visit(*this);
 }
 
-const std::string& FunctionNode::getFunctionName() const {
-    return funcName;
+const char* FunctionNode::getFunctionName() const {
+    return funcName.c_str();
 }
 
 const std::vector<std::string>& FunctionNode::getParamsType() const {

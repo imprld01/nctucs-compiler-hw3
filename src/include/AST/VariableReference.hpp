@@ -10,7 +10,7 @@ class VariableReferenceNode : public ExpressionNode {
                           const uint32_t col,
                           const char* varName);
     ~VariableReferenceNode() = default;
-    const std::string& getVarName() const;
+    const char* getVarName() const;
     void visitedBy(AstNodeVisitor& visitor) const;
 
    private:

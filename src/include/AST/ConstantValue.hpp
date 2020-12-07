@@ -27,7 +27,7 @@ class ConstantValueNode : public ExpressionNode {
     p_scalar_type getDataType() const;
     int intVal() const;
     double floatVal() const;
-    std::string strVal() const;
+    const char* strVal() const;
     bool boolVal() const;
 
    private:
